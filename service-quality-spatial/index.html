@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>片区服务质量空间分析</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="page-header">
+  <div>
+    <h1>片区服务质量空间分析</h1>
+    <p class="sub">本地 8×8 网格 · 虚构服务记录 · 用全局 / 局部 Moran 空间关联判断高延迟是否集中在相邻区域</p>
+  </div>
+  <button id="themeToggle" class="btn" type="button">切换深色</button>
+</header>
+
+<!-- 控制行：一行，作用于下方全部图表 -->
+<div class="controls">
+  <fieldset>
+    <legend class="ctl-label">邻接规则</legend>
+    <label><input type="radio" name="adj" value="rook" checked> 共享边</label>
+    <label><input type="radio" name="adj" value="queen"> 共享角</label>
+  </fieldset>
+  <fieldset>
+    <legend class="ctl-label">置换方式</legend>
+    <label><input type="radio" name="perm" value="free" checked> 自由置换</label>
+    <label><input type="radio" name="perm" value="strat"> 同类型片区内置换</label>
+  </fieldset>
+  <label><span class="ctl-label">置换次数</span>
+    <select id="nPerm">
+      <option value="999">999</option>
+      <option value="4999" selected>4999</option>
+      <option value="9999">9999</option>
+    </select>
+  </label>
+  <label><span class="ctl-label">随机种子</span>
+    <input type="number" id="seed" value="20261122" step="1">
+  </label>
+  <span class="alpha-note">显著性 α = 0.05（局部检验经 BH 多重比较校正）</span>
+</div>
+
+<section class="tiles" id="tiles" aria-live="polite"></section>
+
+<main>
+  <div class="maps-row">
+    <figure class="card">
+      <figcaption>各片区平均延迟（仅参与计算的片区着色）</figcaption>
+      <div class="map" id="meanMap" role="group" aria-label="平均延迟地图"></div>
+      <div class="legend">
+        <span class="ramp" id="meanRamp"></span>
+        <span class="ramp-labels" id="meanRampLabels"></span>
+      </div>
+      <div class="legend">
+        <span><span class="sw hatch"></span>不参与计算（无记录 / 覆盖不足 / 无邻居）</span>
+        <span><span class="sw hatch2"></span>非服务区</span>
+      </div>
+      <p class="note">格子左上角小字为片区类型（商 / 住 / 工）。悬停查看数值，点击格子查看邻居、权重与服务记录。</p>
+    </figure>
+
+    <figure class="card">
+      <figcaption>局部空间关联分类（LISA，BH 校正后 q ≤ 0.05 才着色）</figcaption>
+      <div class="map" id="lisaMap" role="group" aria-label="局部空间关联分类地图"></div>
+      <div class="legend" id="lisaLegend"></div>
+      <p class="note" id="lisaNote"></p>
+    </figure>
+  </div>
+
+  <section class="card" id="detailCard">
+    <h2 id="detailTitle">片区详情</h2>
+    <div id="detailBody"><p class="note">点击上方任一地图格子，查看该片区的实际邻居、权重、参与计算的服务记录，以及它属于高高聚集 / 低低聚集 / 高低离群 / 低高离群中的哪一类。更换邻接规则后，此处内容同步变化。</p></div>
+  </section>
+
+  <div class="excluded-row" id="excludedRow"></div>
+
+  <section class="card" id="pairedCard">
+    <h2>成对样本：全局均值相同，空间排列不同</h2>
+    <p class="note">下面两组虚构片区取值<strong>完全相同（同一个多重集，均值与方差都相等）</strong>，只是空间排列不同：A 把高值堆在相邻片区，B 把同样的值交错摆开。如果结论只由平均值决定，两组应当无法区分。</p>
+    <div class="paired-grid">
+      <div>
+        <h3>A · 聚集排列</h3>
+        <div class="map mini" id="pairMapA" role="group" aria-label="成对样本 A 地图"></div>
+      </div>
+      <div>
+        <h3>B · 交错排列（同样的值）</h3>
+        <div class="map mini" id="pairMapB" role="group" aria-label="成对样本 B 地图"></div>
+      </div>
+      <div id="pairedStats"></div>
+    </div>
+  </section>
+
+  <section class="card method" id="methodCard">
+    <h2>方法、随机种子与精度</h2>
+    <dl id="methodList"></dl>
+  </section>
+
+  <section class="card" id="tableCard">
+    <h2>全部片区数据表（图表的表格视图）</h2>
+    <div class="table-wrap"><table id="fullTable"></table></div>
+  </section>
+</main>
+
+<footer>
+  虚构数据 · 仅用于方法演示。数据集由固定生成种子产生，不随分析种子变化；分析种子只控制置换检验的随机序列。
+</footer>
+
+<div class="tooltip" id="tooltip" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
